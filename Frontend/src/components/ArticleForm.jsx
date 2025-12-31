@@ -107,7 +107,7 @@ const ArticleForm = () => {
                         id="title"
                         {...register('title')}
                         className={`w-full rounded-lg border ${errors.title ? 'border-red-500' : 'border-border'
-                            } bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
+                            } bg-background text-foreground px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
                         placeholder="Enter article title"
                     />
                     {errors.title && (
@@ -128,7 +128,7 @@ const ArticleForm = () => {
                         id="original_url"
                         {...register('original_url')}
                         className={`w-full rounded-lg border ${errors.original_url ? 'border-red-500' : 'border-border'
-                            } bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
+                            } bg-background text-foreground px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
                         placeholder="https://example.com/article"
                     />
                     {errors.original_url && (
@@ -183,7 +183,7 @@ const ArticleForm = () => {
                         id="references"
                         {...register('references')}
                         className={`w-full rounded-lg border ${errors.references ? 'border-red-500' : 'border-border'
-                            } bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
+                            } bg-background text-foreground px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
                         placeholder="https://site1.com, https://site2.com"
                     />
                     {errors.references && (
