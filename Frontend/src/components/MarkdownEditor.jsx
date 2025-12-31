@@ -14,7 +14,7 @@ const MarkdownEditor = ({ value, onChange, placeholder, error, label }) => {
                     value={value}
                     onChange={onChange}
                     preview="edit"
-                    height={400}
+                    height={500}
                     visibleDragbar={false}
                     highlightEnable={false}
                     className="markdown-editor"

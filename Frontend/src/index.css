@@ -70,6 +70,7 @@ body {
 .markdown-editor .w-md-editor-text-input {
   font-size: 14px !important;
   line-height: 1.6 !important;
+  color: hsl(222.2 84% 4.9%) !important;
 }
 
 /* Dark Mode Markdown Editor Styles */
