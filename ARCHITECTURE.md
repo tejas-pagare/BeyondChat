@@ -21,6 +21,171 @@ The Blog Management System consists of three main parts:
 
 ---
 
+## Data Flow Diagrams
+
+### Overall System Architecture
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        Browser[Web Browser]
+    end
+    
+    subgraph "Frontend Layer"
+        React[React App<br/>Vite + Tailwind]
+        Router[React Router]
+        API_Client[Axios Client]
+    end
+    
+    subgraph "Backend Layer"
+        Express[Express Server]
+        RateLimit[Rate Limiter]
+        Sanitize[Input Sanitizer]
+        Validate[Joi Validator]
+        Controller[Controllers]
+    end
+    
+    subgraph "Data Layer"
+        MongoDB[(MongoDB)]
+    end
+    
+    subgraph "External Services"
+        Gemini[Gemini AI]
+        SerpAPI[SerpAPI]
+        Websites[External Sites]
+    end
+    
+    Browser --> React
+    React --> Router
+    Router --> API_Client
+    API_Client -->|HTTP Request| Express
+    Express --> RateLimit
+    RateLimit --> Sanitize
+    Sanitize --> Validate
+    Validate --> Controller
+    Controller --> MongoDB
+    Controller --> Gemini
+    Controller --> SerpAPI
+    Controller --> Websites
+    
+    MongoDB -->|Data| Controller
+    Gemini -->|Enhanced Content| Controller
+    SerpAPI -->|Search Results| Controller
+    Websites -->|Scraped Content| Controller
+    
+    Controller -->|JSON Response| Express
+    Express -->|HTTP Response| API_Client
+    API_Client --> React
+    React --> Browser
+```
+
+### Article Creation Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant RateLimit
+    participant Validator
+    participant Controller
+    participant DB as MongoDB
+    
+    User->>Frontend: Fill article form
+    User->>Frontend: Click "Create"
+    Frontend->>Frontend: Validate with Zod
+    Frontend->>RateLimit: POST /api/articles
+    RateLimit->>RateLimit: Check rate limit
+    RateLimit->>Validator: Forward request
+    Validator->>Validator: Validate with Joi
+    Validator->>Controller: createArticle()
+    Controller->>DB: Check duplicate URL
+    alt URL exists
+        DB-->>Controller: Article found
+        Controller-->>Frontend: 409 Conflict
+        Frontend-->>User: Show error
+    else URL unique
+        DB-->>Controller: No duplicate
+        Controller->>DB: Save new article
+        DB-->>Controller: Created article
+        Controller-->>Frontend: 201 Created
+        Frontend-->>User: Success + Navigate
+    end
+```
+
+### Article Enhancement Flow
+
+```mermaid
+sequenceDiagram
+    participant Script as enhanceArticles.js
+    participant Backend
+    participant DB as MongoDB
+    participant Search as SerpAPI
+    participant Scraper
+    participant AI as Gemini/OpenAI
+    
+    Script->>Backend: GET /api/articles
+    Backend->>DB: Find all articles
+    DB-->>Backend: Articles array
+    Backend-->>Script: JSON response
+    
+    loop For each article
+        Script->>Search: Search title
+        Search-->>Script: Competitor URLs
+        
+        Script->>Scraper: Scrape URL 1
+        Scraper-->>Script: Content 1
+        
+        Script->>Scraper: Scrape URL 2
+        Scraper-->>Script: Content 2
+        
+        Script->>AI: Generate enhanced content
+        Note over Script,AI: Original + Competitor content
+        AI-->>Script: Enhanced article
+        
+        Script->>Script: Append citations
+        Script->>Backend: PUT /api/articles/:id
+        Backend->>DB: Update article
+        DB-->>Backend: Updated article
+        Backend-->>Script: Success
+    end
+```
+
+### Article Retrieval Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Dashboard
+    participant API
+    participant RateLimit
+    participant Controller
+    participant DB as MongoDB
+    
+    User->>Dashboard: Visit dashboard
+    Dashboard->>API: GET /api/articles
+    API->>RateLimit: Check limit
+    RateLimit->>Controller: getArticles()
+    Controller->>DB: Article.find()
+    DB-->>Controller: Articles array
+    Controller-->>API: JSON response
+    API-->>Dashboard: Articles data
+    Dashboard->>Dashboard: Render cards
+    Dashboard-->>User: Display articles
+    
+    User->>Dashboard: Click article
+    Dashboard->>API: GET /api/articles/:id
+    API->>RateLimit: Check limit
+    RateLimit->>Controller: getArticleById()
+    Controller->>Controller: Validate ObjectId
+    Controller->>DB: Article.findById()
+    DB-->>Controller: Article data
+    Controller-->>API: JSON response
+    API-->>Dashboard: Article details
+    Dashboard-->>User: Show comparison view
+```
+
+---
+
 ## How It Works
 
 ### Step 1: Seeding Articles
