@@ -14,3 +14,5 @@ app.listen(PORT, () => {
     console.log("MONGODB", process.env.MONGO_URI);
     console.log(`Server running on port ${PORT}`);
 });
+
+module.exports = app;
