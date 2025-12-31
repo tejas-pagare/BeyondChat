@@ -5,9 +5,16 @@ const Article = require('../models/Article');
 // @access  Public
 const getArticles = async (req, res) => {
     try {
-        const articles = await Article.find().sort({ created_at: -1 });
+        console.log('📥 GET /api/articles - Fetching all articles...');
+        const articles = await Article.find()
+            .sort({ created_at: -1 })
+            .select('-__v') // Exclude version field
+            .lean() // Return plain JS objects for better performance
+            .exec();
+        console.log(`✅ Found ${articles.length} articles`);
         res.json(articles);
     } catch (error) {
+        console.error('❌ Error fetching articles:', error.message);
         res.status(500).json({ message: error.message });
     }
 };

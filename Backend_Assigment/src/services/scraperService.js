@@ -1,12 +1,13 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const Article = require('../models/Article');
 
 const BLOG_URL = 'https://beyondchats.com/blogs/';
 
 const fetchHTML = async (url) => {
     try {
-        const { data } = await axios.get(url);
+        const { data } = await axios.get(url, {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
         return cheerio.load(data);
     } catch (error) {
         console.error(`Error fetching ${url}:`, error.message);
@@ -27,13 +28,22 @@ const getLastPageNumber = async () => {
 };
 
 const scrapeArticleContent = async (url) => {
-    // Basic selector logic - may need adjustment based on creating a robust generic scraper or this specific site
     const $ = await fetchHTML(url);
-    const title = $('h1').text().trim();
-    // Usually content is in a specific div. I'll guess standard selectors or dump generic p's
-    // Inspecting via assumption: commonly .entry-content or article
-    let content = $('.entry-content, article').text().trim();
-    if (!content) content = $('body').text().trim().substring(0, 1000); // Fallback
+
+    // Title: Based on your provided HTML structure
+    let title = $('.elementor-heading-title').first().text().trim();
+    if (!title) title = $('h1').first().text().trim();
+    console.log(title);
+    // Content: Targeting the #content ID you specified
+    // We look specifically for the post-content widget inside #content to get cleaner text
+    let content = $('#content .elementor-widget-theme-post-content')[0].innerText;
+    console.log(content);
+    // Fallback if the specific widget isn't found, take everything in #content
+    if (!content) content = $('#content').text().trim();
+
+    // Final fallback to common WordPress classes or body
+    if (!content) content = $('.entry-content, article').text().trim();
+    if (!content) content = $('body').text().trim();
 
     return { title, content };
 };
@@ -50,44 +60,33 @@ const scrapeOldestArticles = async (limit = 5) => {
         console.log(`Scraping list page: ${url}`);
         const $ = await fetchHTML(url);
 
-        // Items usually in .post or article tag.
-        // Based on markdown viewed earlier, they are listed.
-        // I need to reverse the list on the page because the page itself processes New -> Old (top to bottom).
-        // BUT the LAST page has the OLDEST articles.
-        // On the LAST page, the articles at the BOTTOM are the absolute oldest? 
-        // Or usually blogs show New -> Old. 
-        // Page 1: 2024 (Nov, Oct...)
-        // Page 15: 2021 (Jan...)
-        // On Page 15, the top is Jan 2021, bottom is Dec 2020? No, usually Top is newer than Bottom.
-        // So the absolute oldest is the LAST item on the LAST page.
-
         const pageLinks = [];
-        $('.div-archive-post a.link, article h2 a').each((i, el) => { // Selectors guessed, will need to be robust
+        // Target common article link structures in Elementor/WordPress
+        $('.elementor-post__title a, article h2 a, .entry-title a').each((i, el) => {
             const link = $(el).attr('href');
             if (link && !pageLinks.includes(link)) pageLinks.push(link);
         });
 
-        // If I assume top is newer, then correct order on page is Top->Bottom = New->Old.
-        // So the bottom-most item is older.
-        // So I should take items from the end of the list.
-
-        pageLinks.reverse(); // Now: [Oldest, ..., NewestOnPage]
+        // Reverse to get oldest first (since lists are usually New -> Old)
+        pageLinks.reverse();
 
         for (const link of pageLinks) {
             if (articlesToScrape.length >= limit) break;
             articlesToScrape.push(link);
         }
-
         currentPage--;
     }
 
-    console.log(`Found ${articlesToScrape.length} article links. Scraping content...`);
+    console.log(`Found ${articlesToScrape.length} article links. Scraping full content...`);
 
     const results = [];
-    for (const link of articlesToScrape) { // specific order: oldest first now
+    for (const link of articlesToScrape) {
         try {
-            console.log(`Scraping content: ${link}`);
+            console.log(`Scraping: ${link}`);
             const { title, content } = await scrapeArticleContent(link);
+            console.log("Scraped content");
+            console.log(title);
+            console.log(content);
             results.push({
                 title,
                 original_content: content,
@@ -99,7 +98,6 @@ const scrapeOldestArticles = async (limit = 5) => {
             console.error(`Failed to scrape ${link}: ${e.message}`);
         }
     }
-
     return results;
 };
 
