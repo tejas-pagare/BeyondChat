@@ -59,8 +59,8 @@ const ArticleDetail = () => {
     }
 
     return (
-        <div className="h-[calc(100vh-8rem)] flex flex-col">
-            <div className="mb-6 flex items-center justify-between flex-shrink-0">
+        <div className="min-h-[calc(80vh-12rem)] flex flex-col">
+            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 flex-shrink-0">
                 <div className="flex items-center space-x-4">
                     <Link
                         to="/"
@@ -84,7 +84,7 @@ const ArticleDetail = () => {
                 </Link>
             </div>
 
-            <div className="flex-grow min-h-0">
+            <div className="flex-grow min-h-[600px] lg:min-h-[700px]">
                 <ComparisonView
                     original={article.original_content}
                     updated={article.updated_content}

@@ -3,14 +3,14 @@ import ReactMarkdown from 'react-markdown';
 
 const ComparisonView = ({ original, updated }) => {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 h-full">
             {/* Original Column */}
-            <div className="flex flex-col h-full bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-                <div className="px-6 py-4 border-b border-border bg-muted/50 flex justify-between items-center sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-muted/60">
+            <div className="flex flex-col h-[500px] lg:h-full bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-border bg-muted/50 flex justify-between items-center flex-shrink-0 backdrop-blur supports-[backdrop-filter]:bg-muted/60">
                     <h3 className="text-sm font-semibold text-foreground">Original Content</h3>
                     <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-md font-medium">Read Only</span>
                 </div>
-                <div className="p-6 overflow-y-auto flex-grow">
+                <div className="p-4 lg:p-6 overflow-y-auto flex-grow">
                     {original ? (
                         <div className="prose prose-neutral prose-sm max-w-none dark:prose-invert">
                             <ReactMarkdown>{original}</ReactMarkdown>
@@ -24,8 +24,8 @@ const ComparisonView = ({ original, updated }) => {
             </div>
 
             {/* Updated Column */}
-            <div className="flex flex-col h-full bg-card rounded-xl border border-border overflow-hidden shadow-md ring-1 ring-primary/10">
-                <div className="px-6 py-4 border-b border-border bg-primary/5 flex justify-between items-center sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-primary/5">
+            <div className="flex flex-col h-[500px] lg:h-full bg-card rounded-xl border border-border overflow-hidden shadow-md ring-1 ring-primary/10">
+                <div className="px-6 py-4 border-b border-border bg-primary/5 flex justify-between items-center flex-shrink-0 backdrop-blur supports-[backdrop-filter]:bg-primary/5">
                     <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                         <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -38,7 +38,7 @@ const ComparisonView = ({ original, updated }) => {
                     </h3>
                     <span className="text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-md font-medium border border-primary/20">Enhanced</span>
                 </div>
-                <div className="p-6 overflow-y-auto flex-grow">
+                <div className="p-4 lg:p-6 overflow-y-auto flex-grow">
                     {updated ? (
                         <div className="prose prose-neutral prose-sm max-w-none dark:prose-invert
                                       prose-headings:font-semibold prose-headings:tracking-tight
