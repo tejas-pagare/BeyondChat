@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { Calendar, ArrowRight, Edit2, Trash2, Loader2, ExternalLink } from 'lucide-react';
 import { deleteArticle } from '../services/api';
 import toast from 'react-hot-toast';
+import AlertDialog from './AlertDialog';
 
 const ArticleCard = ({ article, onRefresh }) => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const formattedDate = new Date(article.created_at).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -14,12 +16,15 @@ const ArticleCard = ({ article, onRefresh }) => {
         day: 'numeric',
     });
 
-    const handleDelete = async (e) => {
+    const handleDelete = (e) => {
         e.preventDefault();
-        if (!window.confirm('Are you sure you want to delete this article?')) return;
+        setShowDeleteDialog(true);
+    };
 
+    const confirmDelete = async () => {
         try {
             setIsDeleting(true);
+            setShowDeleteDialog(false);
             await deleteArticle(article._id);
             toast.success('Article deleted successfully');
             if (onRefresh) onRefresh();
@@ -100,6 +105,17 @@ const ArticleCard = ({ article, onRefresh }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog
+                isOpen={showDeleteDialog}
+                onClose={() => setShowDeleteDialog(false)}
+                onConfirm={confirmDelete}
+                title="Delete Article"
+                description={`Are you sure you want to delete "${article.title}"? This action cannot be undone.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+            />
         </div>
     );
 };
