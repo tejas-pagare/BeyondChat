@@ -8,8 +8,15 @@ const {
     deleteArticle
 } = require('../controllers/articleController');
 const { validateCreate, validateUpdate } = require('../middleware/validation');
+const { writeApiLimiter } = require('../middleware/rateLimiter');
 
-router.route('/').get(getArticles).post(validateCreate, createArticle);
-router.route('/:id').get(getArticleById).put(validateUpdate, updateArticle).delete(deleteArticle);
+// GET routes (read operations) - no extra rate limiting
+router.get('/', getArticles);
+router.get('/:id', getArticleById);
+
+// POST/PUT/DELETE routes (write operations) - stricter rate limiting
+router.post('/', writeApiLimiter, validateCreate, createArticle);
+router.put('/:id', writeApiLimiter, validateUpdate, updateArticle);
+router.delete('/:id', writeApiLimiter, deleteArticle);
 
 module.exports = router;
