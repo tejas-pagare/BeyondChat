@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getArticles } from '../services/api';
 import ArticleCard from '../components/ArticleCard';
-import { Loader2, AlertCircle, Plus } from 'lucide-react';
+import { Loader2, AlertCircle, Plus, RefreshCw, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
@@ -31,13 +31,17 @@ const Dashboard = () => {
 
     const handleRefresh = () => {
         fetchArticles();
+        toast.success('Refreshing articles...');
     };
 
     if (loading && articles.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <Loader2 className="h-12 w-12 text-indigo-600 animate-spin mb-4" />
-                <p className="text-gray-500 font-medium">Loading articles...</p>
+                <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
+                    <Loader2 className="relative h-12 w-12 text-primary animate-spin mb-4" />
+                </div>
+                <p className="text-muted-foreground font-medium">Loading your articles...</p>
             </div>
         );
     }
@@ -48,12 +52,13 @@ const Dashboard = () => {
                 <div className="bg-red-100 p-4 rounded-full mb-4">
                     <AlertCircle className="h-10 w-10 text-red-600" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Connection Error</h2>
-                <p className="text-gray-600 max-w-md mb-6">{error}</p>
+                <h2 className="text-xl font-bold text-foreground mb-2">Connection Error</h2>
+                <p className="text-muted-foreground max-w-md mb-6">{error}</p>
                 <button
                     onClick={fetchArticles}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
                 >
+                    <RefreshCw className="h-4 w-4" />
                     Try Again
                 </button>
             </div>
@@ -61,34 +66,60 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="flex items-center space-x-4">
-                    <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                    <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm font-medium">
-                        {articles.length} Article{articles.length !== 1 ? 's' : ''}
-                    </span>
-                </div>
+        <div className="space-y-8">
+            {/* Header Section */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-8">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -z-10" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-primary/5 rounded-full blur-2xl -z-10" />
 
-                <Link
-                    to="/articles/new"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                    <Plus className="-ml-1 mr-2 h-4 w-4" />
-                    Create New Article
-                </Link>
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary/10 rounded-lg">
+                                <FileText className="h-6 w-6 text-primary" />
+                            </div>
+                            <h1 className="text-3xl font-bold text-foreground">Content Dashboard</h1>
+                        </div>
+                        <p className="text-muted-foreground max-w-2xl">
+                            Manage your articles and AI-enhanced content in one place
+                        </p>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleRefresh}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-foreground bg-card hover:bg-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                            Refresh
+                        </button>
+                        <Link
+                            to="/articles/new"
+                            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm hover:shadow-md"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Create Article
+                        </Link>
+                    </div>
+                </div>
             </div>
 
+            {/* Articles Grid */}
             {articles.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-lg border border-dashed border-slate-300">
-                    <p className="text-gray-500 text-lg">No articles found.</p>
-                    <p className="text-gray-400 text-sm mt-1 mb-6">Get started by creating a new article.</p>
+                <div className="text-center py-16 bg-card rounded-2xl border-2 border-dashed border-border">
+                    <div className="inline-flex p-4 bg-muted rounded-full mb-4">
+                        <FileText className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No articles yet</h3>
+                    <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto">
+                        Get started by creating your first article and let AI enhance it
+                    </p>
                     <Link
                         to="/articles/new"
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-sm"
                     >
-                        <Plus className="-ml-1 mr-2 h-4 w-4" />
-                        Create Article
+                        <Plus className="h-4 w-4" />
+                        Create Your First Article
                     </Link>
                 </div>
             ) : (

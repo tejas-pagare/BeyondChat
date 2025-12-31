@@ -9,6 +9,12 @@ app.use(express.json());
 app.use(cors());
 app.use(morgan('dev'));
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+    console.log(`🔵 ${req.method} ${req.url}`);
+    next();
+});
+
 // Routes (to be imported later)
 app.use('/api/articles', require('./routes/articleRoutes'));
 

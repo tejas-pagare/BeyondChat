@@ -1,23 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { createArticle, getArticleById, updateArticle } from '../services/api';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { articleSchema } from '../lib/validations';
+import MarkdownEditor from './MarkdownEditor';
+import { ArrowLeft, Save, Loader2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ArticleForm = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEditMode = !!id;
-
-    const [formData, setFormData] = useState({
-        title: '',
-        original_content: '',
-        original_url: '',
-        updated_content: '',
-        references: '',
-    });
-    const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(isEditMode);
+
+    const {
+        register,
+        handleSubmit,
+        control,
+        setValue,
+        formState: { errors, isSubmitting },
+    } = useForm({
+        resolver: zodResolver(articleSchema),
+        defaultValues: {
+            title: '',
+            original_content: '',
+            original_url: '',
+            updated_content: '',
+            references: '',
+        },
+    });
 
     useEffect(() => {
         if (isEditMode) {
@@ -29,13 +41,11 @@ const ArticleForm = () => {
         try {
             const response = await getArticleById(id);
             const article = response.data;
-            setFormData({
-                title: article.title,
-                original_content: article.original_content,
-                original_url: article.original_url,
-                updated_content: article.updated_content || '',
-                references: article.references ? article.references.join(', ') : '',
-            });
+            setValue('title', article.title);
+            setValue('original_content', article.original_content);
+            setValue('original_url', article.original_url);
+            setValue('updated_content', article.updated_content || '');
+            setValue('references', article.references ? article.references.join(', ') : '');
         } catch (error) {
             console.error('Failed to fetch article', error);
             toast.error('Failed to load article details');
@@ -45,156 +55,156 @@ const ArticleForm = () => {
         }
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-
+    const onSubmit = async (data) => {
         try {
-            // Convert references string to array
-            const referencesArray = formData.references
-                .split(',')
-                .map((ref) => ref.trim())
-                .filter((ref) => ref !== '');
-
-            const payload = {
-                ...formData,
-                references: referencesArray,
-            };
-
             if (isEditMode) {
-                await updateArticle(id, payload);
+                await updateArticle(id, data);
                 toast.success('Article updated successfully');
             } else {
-                await createArticle(payload);
+                await createArticle(data);
                 toast.success('Article created successfully');
             }
             navigate('/');
         } catch (error) {
             console.error('Failed to save article', error);
-            toast.error(error.response?.data?.message || 'Failed to save article');
-        } finally {
-            setLoading(false);
+            const errorMessage = error.response?.data?.message || 'Failed to save article';
+            toast.error(errorMessage);
         }
     };
 
     if (initialLoading) {
         return (
             <div className="flex justify-center items-center min-h-[50vh]">
-                <Loader2 className="animate-spin h-8 w-8 text-indigo-600" />
+                <Loader2 className="animate-spin h-8 w-8 text-primary" />
             </div>
         );
     }
 
     return (
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-5xl mx-auto">
             <div className="mb-6 flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-foreground">
                     {isEditMode ? 'Edit Article' : 'Create New Article'}
                 </h1>
                 <button
                     type="button"
                     onClick={() => navigate('/')}
-                    className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+                    className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                     <ArrowLeft className="mr-1 h-4 w-4" />
                     Cancel
                 </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-card p-6 rounded-xl shadow-sm border border-border">
+                {/* Title */}
+                <div className="space-y-2">
+                    <label htmlFor="title" className="block text-sm font-medium text-foreground">
                         Title <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="text"
                         id="title"
-                        name="title"
-                        required
-                        value={formData.title}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
-                        placeholder="Article Title"
+                        {...register('title')}
+                        className={`w-full rounded-lg border ${errors.title ? 'border-red-500' : 'border-border'
+                            } bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
+                        placeholder="Enter article title"
                     />
+                    {errors.title && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {errors.title.message}
+                        </p>
+                    )}
                 </div>
 
-                <div>
-                    <label htmlFor="original_url" className="block text-sm font-medium text-gray-700">
+                {/* Original URL */}
+                <div className="space-y-2">
+                    <label htmlFor="original_url" className="block text-sm font-medium text-foreground">
                         Original URL <span className="text-red-500">*</span>
                     </label>
                     <input
                         type="url"
                         id="original_url"
-                        name="original_url"
-                        required
-                        value={formData.original_url}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+                        {...register('original_url')}
+                        className={`w-full rounded-lg border ${errors.original_url ? 'border-red-500' : 'border-border'
+                            } bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
                         placeholder="https://example.com/article"
                     />
+                    {errors.original_url && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {errors.original_url.message}
+                        </p>
+                    )}
                 </div>
 
-                <div>
-                    <label htmlFor="original_content" className="block text-sm font-medium text-gray-700">
-                        Original Content <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                        id="original_content"
-                        name="original_content"
-                        required
-                        rows={6}
-                        value={formData.original_content}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
-                        placeholder="Paste the original article content here..."
-                    />
-                </div>
+                {/* Original Content */}
+                <Controller
+                    name="original_content"
+                    control={control}
+                    render={({ field }) => (
+                        <MarkdownEditor
+                            label={
+                                <>
+                                    Original Content <span className="text-red-500">*</span>
+                                </>
+                            }
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Paste the original article content here..."
+                            error={errors.original_content?.message}
+                        />
+                    )}
+                />
 
-                <div>
-                    <label htmlFor="updated_content" className="block text-sm font-medium text-gray-700">
-                        Updated Content (AI Version)
-                    </label>
-                    <textarea
-                        id="updated_content"
-                        name="updated_content"
-                        rows={6}
-                        value={formData.updated_content}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
-                        placeholder="AI-enhanced content..."
-                    />
-                </div>
+                {/* Updated Content */}
+                <Controller
+                    name="updated_content"
+                    control={control}
+                    render={({ field }) => (
+                        <MarkdownEditor
+                            label="Updated Content (AI Version)"
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="AI-enhanced content will appear here..."
+                            error={errors.updated_content?.message}
+                        />
+                    )}
+                />
 
-                <div>
-                    <label htmlFor="references" className="block text-sm font-medium text-gray-700">
-                        References (comma separated)
+                {/* References */}
+                <div className="space-y-2">
+                    <label htmlFor="references" className="block text-sm font-medium text-foreground">
+                        References (comma separated URLs)
                     </label>
                     <input
                         type="text"
                         id="references"
-                        name="references"
-                        value={formData.references}
-                        onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2"
+                        {...register('references')}
+                        className={`w-full rounded-lg border ${errors.references ? 'border-red-500' : 'border-border'
+                            } bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all`}
                         placeholder="https://site1.com, https://site2.com"
                     />
+                    {errors.references && (
+                        <p className="text-sm text-red-500 flex items-center gap-1">
+                            <AlertCircle className="w-4 h-4" />
+                            {errors.references.message}
+                        </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                        Enter up to 10 URLs separated by commas
+                    </p>
                 </div>
 
-                <div className="flex justify-end pt-4">
+                {/* Submit Button */}
+                <div className="flex justify-end pt-4 border-t border-border">
                     <button
                         type="submit"
-                        disabled={loading}
-                        className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                        disabled={isSubmitting}
+                        className="inline-flex items-center px-6 py-2.5 rounded-lg text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
                     >
-                        {loading ? (
+                        {isSubmitting ? (
                             <>
                                 <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
                                 Saving...

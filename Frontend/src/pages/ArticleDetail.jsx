@@ -34,8 +34,8 @@ const ArticleDetail = () => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh]">
-                <Loader2 className="h-12 w-12 text-indigo-600 animate-spin mb-4" />
-                <p className="text-gray-500 font-medium">Loading content...</p>
+                <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+                <p className="text-muted-foreground font-medium">Loading content...</p>
             </div>
         );
     }
@@ -64,21 +64,21 @@ const ArticleDetail = () => {
                 <div className="flex items-center space-x-4">
                     <Link
                         to="/"
-                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-colors shadow-sm"
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-card border border-border text-muted-foreground hover:bg-muted hover:text-primary transition-colors shadow-sm"
                         title="Back to Dashboard"
                     >
                         <ArrowLeft className="h-5 w-5" />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 line-clamp-1">{article.title}</h1>
-                        <p className="text-sm text-gray-500 mt-0.5">
-                            Article ID: <span className="font-mono text-xs text-gray-400">{article._id}</span>
+                        <h1 className="text-2xl font-bold text-foreground line-clamp-1">{article.title}</h1>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                            Article ID: <span className="font-mono text-xs">{article._id}</span>
                         </p>
                     </div>
                 </div>
                 <Link
                     to={`/articles/${article._id}/edit`}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-all shadow-sm"
                 >
                     Edit Article
                 </Link>

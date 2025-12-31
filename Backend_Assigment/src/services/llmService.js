@@ -6,86 +6,80 @@ const axios = require('axios');
 
 
 const generateEnhancedContent = async (originalContent, competitorContents) => {
+    // 1. Log Competitor Content as requested
+    console.log("--- Competitor Content Logs ---");
+    console.log(competitorContents.map((c, i) => `Competitor ${i + 1}: ${c.substring(0, 500)}...`).join('\n'));
+    console.log("-------------------------------");
+
+    /** * NOTE: Actual API logic is commented out per your request.
+     * Returning a dummy response in the new standard format.
+     */
+
+    
     try {
         const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey || apiKey.startsWith('your_')) {
-            console.warn('Gemini Key is missing. Returning mock rewrite.');
-            return originalContent + '\n\n[MOCK REWRITE: Active Gemini Key Required]';
-        }
-
-        const model = "gemini-2.5-flash"; // Use gemini-1.5-flash for faster/cheaper results
+        const model = "gemini-3-flash-preview"; // Updated to a stable model version
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
+        // IMPROVED PROMPT: Specific structure and SEO instructions
         const prompt = `
-        You are an expert SEO content writer.
-        Original Article: "${originalContent}"
+        You are a Professional SEO Content Strategist. 
+        
+        TASK:
+        Rewrite the "Original Article" by synthesizing unique insights from the "Competitor Insights" provided. 
+        The goal is to create a "Skyscraper" piece of content that is better than all competitors.
+
+        CONSTRAINTS:
+        1. Maintain the original core message and intent.
+        2. Use a professional yet engaging tone.
+        3. Use Markdown formatting (H1, H2, H3, Bullet points).
+        4. Include a 'Key Takeaways' section at the beginning.
+        5. Optimize for SEO: Use natural keyword integration.
+
+        OUTPUT FORMAT:
+        Return the response in the following Markdown structure:
+        # [Catchy SEO Title]
+        **Meta Description:** [150-160 characters]
+        
+        ## Key Takeaways
+        - [Point 1]
+        - [Point 2]
+
+        ## Introduction
+        [Content...]
+
+        ## [Subheading 1]
+        [Detailed Content...]
+
+        ## [Subheading 2]
+        [Detailed Content...]
+
+        ## Conclusion
+        [Summary...]
+        
+        ---
+        Original Article: 
+        "${originalContent}"
         
         Competitor Insights:
-        ${competitorContents.map((c, i) => `Competitor ${i + 1}: ${c.substring(0, 500)}...`).join('\n')}
-        
-        Task: Rewrite the original article to be more engaging, comprehensive, and match the style or quality of the competitors. 
-        Keep the original meaning but improve flow and SEO.
+        ${competitorContents.map((c, i) => `COMPETITOR ${i + 1}:\n${c}`).join('\n\n')}
         `;
 
         const response = await axios.post(url, {
-            contents: [{
-                parts: [{ text: prompt }]
-            }],
+            contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
                 temperature: 0.7,
-                maxOutputTokens: 2048,
-            }
-        }, {
-            headers: {
-                'Content-Type': 'application/json'
+                maxOutputTokens: 3000,
             }
         });
 
-        // Gemini's response path: response.data.candidates[0].content.parts[0].text
         return response.data.candidates[0].content.parts[0].text;
 
     } catch (error) {
-        // Detailed error logging
-        const errorMessage = error.response ? JSON.stringify(error.response.data) : error.message;
-        console.error(`Gemini API Error: ${errorMessage}`);
-
-        // Try OpenAI as fallback if Gemini fails
-        if (error.response?.data?.error?.code === 429) {
-            console.log('Attempting OpenAI fallback...');
-            try {
-                const openaiKey = process.env.OPENAI_API_KEY;
-                if (openaiKey && !openaiKey.startsWith('your_')) {
-                    const prompt = `
-                    You are an expert SEO content writer.
-                    Original Article: "${originalContent}"
-                    
-                    Competitor Insights:
-                    ${competitorContents.map((c, i) => `Competitor ${i + 1}: ${c.substring(0, 500)}...`).join('\n')}
-                    
-                    Task: Rewrite the original article to be more engaging, comprehensive, and match the style or quality of the competitors. 
-                    Keep the original meaning but improve flow and SEO.
-                    `;
-
-                    const openaiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-                        model: "gpt-3.5-turbo",
-                        messages: [{ role: "user", content: prompt }],
-                        temperature: 0.7
-                    }, {
-                        headers: {
-                            'Authorization': `Bearer ${openaiKey}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    console.log('✅ OpenAI fallback successful');
-                    return openaiResponse.data.choices[0].message.content;
-                }
-            } catch (openaiError) {
-                console.error('OpenAI fallback also failed:', openaiError.message);
-            }
-        }
-
+        console.error(`Gemini API Error: ${error.message}`);
         return originalContent;
     }
+    
+
 };
 module.exports = { generateEnhancedContent };

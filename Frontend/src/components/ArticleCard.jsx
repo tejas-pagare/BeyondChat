@@ -1,26 +1,27 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, ArrowRight, FileText, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Calendar, ArrowRight, Edit2, Trash2, Loader2, ExternalLink } from 'lucide-react';
 import { deleteArticle } from '../services/api';
 import toast from 'react-hot-toast';
 
 const ArticleCard = ({ article, onRefresh }) => {
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     const formattedDate = new Date(article.created_at).toLocaleDateString('en-US', {
         year: 'numeric',
-        month: 'long',
+        month: 'short',
         day: 'numeric',
     });
 
     const handleDelete = async (e) => {
-        e.preventDefault(); // Prevent navigation if wrapped in Link (it's not, but good practice)
+        e.preventDefault();
         if (!window.confirm('Are you sure you want to delete this article?')) return;
 
         try {
             setIsDeleting(true);
             await deleteArticle(article._id);
-            toast.success('Article deleted');
+            toast.success('Article deleted successfully');
             if (onRefresh) onRefresh();
         } catch (error) {
             console.error('Failed to delete', error);
@@ -31,43 +32,56 @@ const ArticleCard = ({ article, onRefresh }) => {
     };
 
     return (
-        <div className="bg-white overflow-hidden shadow-sm rounded-lg border border-slate-200 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
-            <div className="p-6 flex-grow">
-                <div className="flex justify-between items-start">
-                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-2">
-                        {article.title}
-                    </h3>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                        {article.updated_content ? 'Enhanced' : 'Original'}
-                    </span>
-                </div>
-                <div className="flex items-center text-sm text-gray-500 mb-4 space-x-4">
-                    <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {formattedDate}
+        <div
+            className="group relative bg-card overflow-hidden rounded-xl border border-border hover:border-primary/50 transition-all duration-300 flex flex-col h-full hover:shadow-lg hover:-translate-y-1"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {/* Gradient overlay on hover */}
+            <div className={`absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`} />
+
+            <div className="p-6 flex-grow relative z-10">
+                {/* Title */}
+                <h3 className="text-lg font-semibold text-foreground line-clamp-2 mb-3 group-hover:text-primary transition-colors">
+                    {article.title}
+                </h3>
+
+                {/* Meta info */}
+                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                    <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>{formattedDate}</span>
                     </div>
-                    <div className="flex items-center" title="Original ID">
-                        <FileText className="h-4 w-4 mr-1" />
-                        ID: {article._id.substring(0, 8)}...
-                    </div>
+                    {article.references && article.references.length > 0 && (
+                        <div className="flex items-center gap-1.5">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            <span>{article.references.length} sources</span>
+                        </div>
+                    )}
                 </div>
-                <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-                    {article.original_content ? article.original_content.substring(0, 150) + '...' : 'No content available'}
+
+                {/* Content preview */}
+                <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+                    {article.original_content
+                        ? article.original_content.substring(0, 150) + '...'
+                        : 'No content available'}
                 </p>
             </div>
 
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-between items-center">
+            {/* Footer */}
+            <div className="relative z-10 px-6 py-4 bg-muted/30 border-t border-border flex justify-between items-center">
                 <Link
                     to={`/articles/${article._id}`}
-                    className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors group/link"
                 >
-                    View Comparison <ArrowRight className="ml-1 h-4 w-4" />
+                    <span>View Details</span>
+                    <ArrowRight className={`h-4 w-4 transition-transform ${isHovered ? 'translate-x-1' : ''}`} />
                 </Link>
 
-                <div className="flex space-x-2">
+                <div className="flex gap-1">
                     <Link
                         to={`/articles/${article._id}/edit`}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
                         title="Edit Article"
                     >
                         <Edit2 className="h-4 w-4" />
@@ -75,10 +89,14 @@ const ArticleCard = ({ article, onRefresh }) => {
                     <button
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                        className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
                         title="Delete Article"
                     >
-                        {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        {isDeleting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Trash2 className="h-4 w-4" />
+                        )}
                     </button>
                 </div>
             </div>

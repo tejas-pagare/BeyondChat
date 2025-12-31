@@ -10,21 +10,42 @@ const axios = require('axios');
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-// Helper to scrape competitor content
 const scrapeCompetitorContent = async (url) => {
     try {
         const { data } = await axios.get(url, {
-            headers: { 'User-Agent': 'Mozilla/5.0' }, // Fake UA to avoid simple blocks
-            timeout: 5000
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9'
+            },
+            timeout: 10000 // Increased timeout for larger pages
         });
+
         const $ = cheerio.load(data);
-        return $('body').text().trim().substring(0, 2000); // Basic textual content
+
+        // 1. Remove non-content elements before extracting text
+        $('script, style, nav, footer, header, noscript, iframe, ad').remove();
+
+        // 2. Target common article containers if they exist, otherwise fallback to body
+        // This helps avoid sidebar/menu noise
+        const contentSelector = 'article, main, .post-content, .entry-content, #content';
+        let mainContent = $(contentSelector).text().trim();
+
+        if (!mainContent) {
+            mainContent = $('body').text().trim();
+        }
+
+        // 3. Clean up the text: Remove extra whitespace and newlines
+        const cleanedText = mainContent
+            .replace(/\s\s+/g, ' ')      // Replace multiple spaces/tabs with a single space
+            .replace(/\n+/g, '\n');      // Keep single newlines but remove excessive ones
+
+        return cleanedText; // Returns the full string without the 2000 char limit
+
     } catch (error) {
         console.error(`Failed to scrape competitor ${url}: ${error.message}`);
         return '';
     }
 };
-
 const enhanceArticles = async () => {
     try {
         await connectDB();
