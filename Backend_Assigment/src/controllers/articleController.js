@@ -1,4 +1,10 @@
 const Article = require('../models/Article');
+const mongoose = require('mongoose');
+
+// Helper function to validate MongoDB ObjectId
+const isValidObjectId = (id) => {
+    return mongoose.Types.ObjectId.isValid(id);
+};
 
 // @desc    Get all articles
 // @route   GET /api/articles
@@ -15,7 +21,11 @@ const getArticles = async (req, res) => {
         res.json(articles);
     } catch (error) {
         console.error('❌ Error fetching articles:', error.message);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch articles',
+            error: error.message
+        });
     }
 };
 
@@ -24,14 +34,33 @@ const getArticles = async (req, res) => {
 // @access  Public
 const getArticleById = async (req, res) => {
     try {
-        const article = await Article.findById(req.params.id);
-        if (article) {
-            res.json(article);
-        } else {
-            res.status(404).json({ message: 'Article not found' });
+        const { id } = req.params;
+
+        // Validate ObjectId
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid article ID format'
+            });
         }
+
+        const article = await Article.findById(id);
+
+        if (!article) {
+            return res.status(404).json({
+                success: false,
+                message: 'Article not found'
+            });
+        }
+
+        res.json(article);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('❌ Error fetching article:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch article',
+            error: error.message
+        });
     }
 };
 
@@ -41,6 +70,16 @@ const getArticleById = async (req, res) => {
 const createArticle = async (req, res) => {
     try {
         const { title, original_content, original_url, updated_content, references } = req.body;
+
+        // Additional validation: Check for duplicate URL
+        const existingArticle = await Article.findOne({ original_url });
+        if (existingArticle) {
+            return res.status(409).json({
+                success: false,
+                message: 'An article with this URL already exists'
+            });
+        }
+
         const article = new Article({
             title,
             original_content,
@@ -48,10 +87,16 @@ const createArticle = async (req, res) => {
             updated_content,
             references
         });
+
         const createdArticle = await article.save();
         res.status(201).json(createdArticle);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        console.error('❌ Error creating article:', error.message);
+        res.status(400).json({
+            success: false,
+            message: 'Failed to create article',
+            error: error.message
+        });
     }
 };
 
@@ -60,23 +105,56 @@ const createArticle = async (req, res) => {
 // @access  Public
 const updateArticle = async (req, res) => {
     try {
+        const { id } = req.params;
         const { title, original_content, original_url, updated_content, references } = req.body;
-        const article = await Article.findById(req.params.id);
 
-        if (article) {
-            article.title = title || article.title;
-            article.original_content = original_content || article.original_content;
-            article.original_url = original_url || article.original_url;
-            article.updated_content = updated_content || article.updated_content;
-            article.references = references || article.references;
-
-            const updatedArticle = await article.save();
-            res.json(updatedArticle);
-        } else {
-            res.status(404).json({ message: 'Article not found' });
+        // Validate ObjectId
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid article ID format'
+            });
         }
+
+        const article = await Article.findById(id);
+
+        if (!article) {
+            return res.status(404).json({
+                success: false,
+                message: 'Article not found'
+            });
+        }
+
+        // Check for duplicate URL if updating original_url
+        if (original_url !== undefined && original_url !== article.original_url) {
+            const duplicate = await Article.findOne({
+                original_url,
+                _id: { $ne: id }
+            });
+            if (duplicate) {
+                return res.status(409).json({
+                    success: false,
+                    message: 'Another article with this URL already exists'
+                });
+            }
+        }
+
+        // Update only provided fields
+        if (title !== undefined) article.title = title;
+        if (original_content !== undefined) article.original_content = original_content;
+        if (original_url !== undefined) article.original_url = original_url;
+        if (updated_content !== undefined) article.updated_content = updated_content;
+        if (references !== undefined) article.references = references;
+
+        const updatedArticle = await article.save();
+        res.json(updatedArticle);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        console.error('❌ Error updating article:', error.message);
+        res.status(400).json({
+            success: false,
+            message: 'Failed to update article',
+            error: error.message
+        });
     }
 };
 
@@ -85,15 +163,37 @@ const updateArticle = async (req, res) => {
 // @access  Public
 const deleteArticle = async (req, res) => {
     try {
-        const article = await Article.findById(req.params.id);
-        if (article) {
-            await article.deleteOne();
-            res.json({ message: 'Article removed' });
-        } else {
-            res.status(404).json({ message: 'Article not found' });
+        const { id } = req.params;
+
+        // Validate ObjectId
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid article ID format'
+            });
         }
+
+        const article = await Article.findById(id);
+
+        if (!article) {
+            return res.status(404).json({
+                success: false,
+                message: 'Article not found'
+            });
+        }
+
+        await article.deleteOne();
+        res.json({
+            success: true,
+            message: 'Article removed successfully'
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('❌ Error deleting article:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete article',
+            error: error.message
+        });
     }
 };
 
