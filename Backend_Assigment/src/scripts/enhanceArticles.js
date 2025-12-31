@@ -70,6 +70,12 @@ const enhanceArticles = async () => {
             await article.save();
 
             console.log('Article updated successfully.');
+
+            // Add delay to avoid rate limiting (wait 60 seconds between articles)
+            if (articles.indexOf(article) < articles.length - 1) {
+                console.log('Waiting 60 seconds before next article to avoid rate limits...');
+                await new Promise(resolve => setTimeout(resolve, 60000));
+            }
         }
 
         console.log('\nEnhancement process completed.');
