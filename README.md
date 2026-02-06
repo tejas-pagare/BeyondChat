@@ -1,4 +1,4 @@
-# Blog Management System - Full Stack Assignment
+# Blog Management System
 
 A comprehensive blog management system with AI-powered content enhancement, built with Node.js, Express, MongoDB, and React.
 
